@@ -87,10 +87,12 @@
             (dc-dlist:remove-node node cache-list)
             ;; Add back at head (most recent)
             (dc-dlist:push-head key cache-list)
-            ;; Update hash table to point to the new head node
-            (setf (gethash key cache-table) (dc-dlist:head cache-list))
-            ;; Set the value on the new node
-            (setf (dc-dlist:value (dc-dlist:head cache-list)) value)
+            ;; Get the new head node
+            (let ((new-node (dc-dlist:head cache-list)))
+              ;; Set the value on the new node
+              (setf (dc-dlist:value new-node) value)
+              ;; Update hash table to point to the new head node
+              (setf (gethash key cache-table) new-node))
             ;; Return value and found indicator
             (values value t))
           
