@@ -38,9 +38,9 @@
   "Insert or update a key-value pair in the cache.
    If the key exists, update its value and move it to the front (most recent).
    If the key is new and cache is at max-size, evict the least recently used entry."
-  (let ((hash-table (cache-hash-table cache))
-        (dlist (cache-dlist cache))
-        (existing-entry (gethash key (cache-hash-table cache))))
+  (let* ((hash-table (cache-hash-table cache))
+         (dlist (cache-dlist cache))
+         (existing-entry (gethash key hash-table)))
     
     (if existing-entry
         ;; Key exists: update value and move to front
@@ -72,9 +72,9 @@
   "Retrieve a value from the cache by key.
    Returns two values: the cached value (or NIL if not found) and T/NIL indicating whether the key was found.
    When found, moves the entry to the front (most recent)."
-  (let ((hash-table (cache-hash-table cache))
-        (dlist (cache-dlist cache))
-        (entry (gethash key (cache-hash-table cache))))
+  (let* ((hash-table (cache-hash-table cache))
+         (dlist (cache-dlist cache))
+         (entry (gethash key hash-table)))
     
     (if entry
         ;; Key found: move to front and return value
