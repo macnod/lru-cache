@@ -45,14 +45,15 @@
       (if found
           ;; Key exists: update value and move to front
           (progn
-            ;; Update the node's value
-            (setf (dc-dlist:value node) value)
             ;; Remove node from its current position
             (dc-dlist:remove-node node cache-list)
             ;; Add it back at the head (most recent) with the key
             (dc-dlist:push-head key cache-list)
-            ;; Update the hash table to point to the new head node
-            (setf (gethash key cache-table) (dc-dlist:head cache-list)))
+            ;; Get the new head node and set the value
+            (let ((new-node (dc-dlist:head cache-list)))
+              (setf (dc-dlist:value new-node) value)
+              ;; Update the hash table to point to the new head node
+              (setf (gethash key cache-table) new-node)))
           
           ;; Key is new
           (progn
