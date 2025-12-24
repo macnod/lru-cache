@@ -24,28 +24,28 @@
     (is (= 3 (cache-max-size cache)))))
 
 (test put-and-get
-  "Test basic put and get operations"
+  "Test basic cache-put and cache-get operations"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
     ;; Put some values
-    (cache-put "key1" "value1" cache)
-    (cache-put "key2" "value2" cache)
-    (cache-put "key3" "value3" cache)
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
     
     ;; Check size
     (is (= 3 (cache-size cache)))
     
     ;; Get values
     (multiple-value-bind (val found)
-      (cache-get "key1" cache)
-      (is (equal "value1" val))
+      (cache-get "key-1" cache)
+      (is (equal "value-1" val))
       (is (eq t found)))
     
-    (multiple-value-bind (val found) (cache-get "key2" cache)
-      (is (equal "value2" val))
+    (multiple-value-bind (val found) (cache-get "key-2" cache)
+      (is (equal "value-2" val))
       (is (eq t found)))
     
-    (multiple-value-bind (val found) (cache-get "key3" cache)
-      (is (equal "value3" val))
+    (multiple-value-bind (val found) (cache-get "key-3" cache)
+      (is (equal "value-3" val))
       (is (eq t found)))))
 
 (test get-nonexistent
@@ -58,14 +58,14 @@
 (test update-existing
   "Test updating an existing key"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
-    (cache-put "key1" "value1" cache)
-    (cache-put "key1" "updated-value" cache)
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-1" "updated-value" cache)
     
     ;; Size should still be 1
     (is (= 1 (cache-size cache)))
     
     ;; Value should be updated
-    (multiple-value-bind (val found) (cache-get "key1" cache)
+    (multiple-value-bind (val found) (cache-get "key-1" cache)
       (is (equal "updated-value" val))
       (is (eq t found)))))
 
@@ -73,28 +73,28 @@
   "Test that least recently used items are evicted"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
     ;; Fill the cache
-    (cache-put "key1" "value1" cache)
-    (cache-put "key2" "value2" cache)
-    (cache-put "key3" "value3" cache)
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
     
-    ;; Add a 4th item, should evict key1 (least recent)
-    (cache-put "key4" "value4" cache)
+    ;; Add a 4th item, should evict key-1 (least recent)
+    (cache-put "key-4" "value-4" cache)
     
     ;; Check size is still 3
     (is (= 3 (cache-size cache)))
     
-    ;; key1 should be evicted
-    (multiple-value-bind (val found) (cache-get "key1" cache)
+    ;; key-1 should be evicted
+    (multiple-value-bind (val found) (cache-get "key-1" cache)
       (declare (ignore val))
       (is (null found)))
     
     ;; Others should still exist
-    (multiple-value-bind (val found) (cache-get "key2" cache)
-      (is (equal "value2" val))
+    (multiple-value-bind (val found) (cache-get "key-2" cache)
+      (is (equal "value-2" val))
       (is (eq t found)))
     
-    (multiple-value-bind (val found) (cache-get "key4" cache)
-      (is (equal "value4" val))
+    (multiple-value-bind (val found) (cache-get "key-4" cache)
+      (is (equal "value-4" val))
       (is (eq t found)))))
 
 (test large-scale-eviction
@@ -133,47 +133,47 @@
   "Test that accessing an item makes it most recent"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
     ;; Fill the cache
-    (cache-put "key1" "value1" cache)
-    (cache-put "key2" "value2" cache)
-    (cache-put "key3" "value3" cache)
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
     
-    ;; Access key1 to make it most recent
-    (cache-get "key1" cache)
+    ;; Access key-1 to make it most recent
+    (cache-get "key-1" cache)
     
-    ;; Add a 4th item, should evict key2 (now least recent)
-    (cache-put "key4" "value4" cache)
+    ;; Add a 4th item, should evict key-2 (now least recent)
+    (cache-put "key-4" "value-4" cache)
     
-    ;; key2 should be evicted
-    (multiple-value-bind (val found) (cache-get "key2" cache)
+    ;; key-2 should be evicted
+    (multiple-value-bind (val found) (cache-get "key-2" cache)
       (declare (ignore val))
       (is (null found)))
     
-    ;; key1 should still exist (was accessed)
-    (multiple-value-bind (val found) (cache-get "key1" cache)
-      (is (equal "value1" val))
+    ;; key-1 should still exist (was accessed)
+    (multiple-value-bind (val found) (cache-get "key-1" cache)
+      (is (equal "value-1" val))
       (is (eq t found)))))
 
 (test lru-order-on-put
   "Test that updating an item makes it most recent"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
     ;; Fill the cache
-    (cache-put "key1" "value1" cache)
-    (cache-put "key2" "value2" cache)
-    (cache-put "key3" "value3" cache)
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
     
-    ;; Update key1 to make it most recent
-    (cache-put "key1" "updated1" cache)
+    ;; Update key-1 to make it most recent
+    (cache-put "key-1" "updated1" cache)
     
-    ;; Add a 4th item, should evict key2 (now least recent)
-    (cache-put "key4" "value4" cache)
+    ;; Add a 4th item, should evict key-2 (now least recent)
+    (cache-put "key-4" "value-4" cache)
     
-    ;; key2 should be evicted
-    (multiple-value-bind (val found) (cache-get "key2" cache)
+    ;; key-2 should be evicted
+    (multiple-value-bind (val found) (cache-get "key-2" cache)
       (declare (ignore val))
       (is (null found)))
     
-    ;; key1 should still exist with updated value
-    (multiple-value-bind (val found) (cache-get "key1" cache)
+    ;; key-1 should still exist with updated value
+    (multiple-value-bind (val found) (cache-get "key-1" cache)
       (is (equal "updated1" val))
       (is (eq t found)))))
 
