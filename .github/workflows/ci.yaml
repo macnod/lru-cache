@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       disable-cache:
-        description: 'Disable all caching'
+        description: 'Disable dependencies caching'
         required: false
         default: 'false'
         type: boolean
