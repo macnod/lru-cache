@@ -1,0 +1,203 @@
+;; Tests for the lru-cache package
+
+(require :dc-dlist)
+(require :fiveam)
+
+(push (uiop:getcwd) asdf:*central-registry*)
+(ql:register-local-projects)
+(asdf:load-system :lru-cache)
+
+(defpackage :lru-cache-tests (:use :cl :fiveam :dc-dlist :lru-cache))
+
+(in-package :lru-cache-tests)
+
+(def-suite lru-cache-tests
+  :description "Test suite for lru-cache")
+
+(in-suite lru-cache-tests)
+
+(test create-cache
+  "Test creating an LRU cache"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    (is (not (null cache)))
+    (is (= 0 (cache-size cache)))
+    (is (= 3 (cache-max-size cache)))))
+
+(test put-and-get
+  "Test basic put and get operations"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    ;; Put some values
+    (cache-put "key1" "value1" cache)
+    (cache-put "key2" "value2" cache)
+    (cache-put "key3" "value3" cache)
+    
+    ;; Check size
+    (is (= 3 (cache-size cache)))
+    
+    ;; Get values
+    (multiple-value-bind (val found)
+      (cache-get "key1" cache)
+      (is (equal "value1" val))
+      (is (eq t found)))
+    
+    (multiple-value-bind (val found) (cache-get "key2" cache)
+      (is (equal "value2" val))
+      (is (eq t found)))
+    
+    (multiple-value-bind (val found) (cache-get "key3" cache)
+      (is (equal "value3" val))
+      (is (eq t found)))))
+
+(test get-nonexistent
+  "Test getting a nonexistent key"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    (multiple-value-bind (val found) (cache-get "nonexistent" cache)
+      (is (null val))
+      (is (null found)))))
+
+(test update-existing
+  "Test updating an existing key"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    (cache-put "key1" "value1" cache)
+    (cache-put "key1" "updated-value" cache)
+    
+    ;; Size should still be 1
+    (is (= 1 (cache-size cache)))
+    
+    ;; Value should be updated
+    (multiple-value-bind (val found) (cache-get "key1" cache)
+      (is (equal "updated-value" val))
+      (is (eq t found)))))
+
+(test eviction
+  "Test that least recently used items are evicted"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    ;; Fill the cache
+    (cache-put "key1" "value1" cache)
+    (cache-put "key2" "value2" cache)
+    (cache-put "key3" "value3" cache)
+    
+    ;; Add a 4th item, should evict key1 (least recent)
+    (cache-put "key4" "value4" cache)
+    
+    ;; Check size is still 3
+    (is (= 3 (cache-size cache)))
+    
+    ;; key1 should be evicted
+    (multiple-value-bind (val found) (cache-get "key1" cache)
+      (declare (ignore val))
+      (is (null found)))
+    
+    ;; Others should still exist
+    (multiple-value-bind (val found) (cache-get "key2" cache)
+      (is (equal "value2" val))
+      (is (eq t found)))
+    
+    (multiple-value-bind (val found) (cache-get "key4" cache)
+      (is (equal "value4" val))
+      (is (eq t found)))))
+
+(test large-scale-eviction
+  "Test that least-recently-used items are evicted, on a large scale"
+  (loop
+    with size = 100 and elements = 100000
+    with cache = (make-instance 'lru-cache :max-size size)
+    for a from 1 to elements
+    for key = (format nil "key-~6,'0d" a)
+    for value = (format nil "value-~6,'0d" a)
+    collect key into keys
+    do (cache-put key value cache)
+    finally
+    (is-true (equal size (cache-size cache))
+      "Expected cache size to be " size)
+    (is-true (equal size (dc-dlist:len (lru-cache::cache-list cache)))
+      "Expected cache list length to be " size)
+    (is-true (equal size (hash-table-count (lru-cache::cache-table cache)))
+      "Expected cache table entry-count to be " size)
+    (is-true (loop for a from 1 to (- elements size)
+               for key = (pop keys)
+               never (multiple-value-bind (node found)
+                       (cache-get key cache)
+                       (declare (ignore node))
+                       found))
+      "The oldest ~d elements were evicted" (- elements size))
+    (is-true (loop for a from (1+ (- elements size)) to elements
+               for key = (pop keys)
+               always (multiple-value-bind (node found)
+                        (cache-get key cache)
+                        (declare (ignore node))
+                        found))
+    "The newest ~d elements are remain in the cache" size)))
+
+(test lru-order-on-get
+  "Test that accessing an item makes it most recent"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    ;; Fill the cache
+    (cache-put "key1" "value1" cache)
+    (cache-put "key2" "value2" cache)
+    (cache-put "key3" "value3" cache)
+    
+    ;; Access key1 to make it most recent
+    (cache-get "key1" cache)
+    
+    ;; Add a 4th item, should evict key2 (now least recent)
+    (cache-put "key4" "value4" cache)
+    
+    ;; key2 should be evicted
+    (multiple-value-bind (val found) (cache-get "key2" cache)
+      (declare (ignore val))
+      (is (null found)))
+    
+    ;; key1 should still exist (was accessed)
+    (multiple-value-bind (val found) (cache-get "key1" cache)
+      (is (equal "value1" val))
+      (is (eq t found)))))
+
+(test lru-order-on-put
+  "Test that updating an item makes it most recent"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    ;; Fill the cache
+    (cache-put "key1" "value1" cache)
+    (cache-put "key2" "value2" cache)
+    (cache-put "key3" "value3" cache)
+    
+    ;; Update key1 to make it most recent
+    (cache-put "key1" "updated1" cache)
+    
+    ;; Add a 4th item, should evict key2 (now least recent)
+    (cache-put "key4" "value4" cache)
+    
+    ;; key2 should be evicted
+    (multiple-value-bind (val found) (cache-get "key2" cache)
+      (declare (ignore val))
+      (is (null found)))
+    
+    ;; key1 should still exist with updated value
+    (multiple-value-bind (val found) (cache-get "key1" cache)
+      (is (equal "updated1" val))
+      (is (eq t found)))))
+
+(test different-value-types
+  "Test storing different types of values"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    ;; Store different types
+    (cache-put "string-key" "string-value" cache)
+    (cache-put "number-key" 42 cache)
+    (cache-put "list-key" '(1 2 3) cache)
+    
+    ;; Retrieve and check
+    (multiple-value-bind (val found) (cache-get "string-key" cache)
+      (is (equal "string-value" val))
+      (is (eq t found)))
+    
+    (multiple-value-bind (val found) (cache-get "number-key" cache)
+      (is (= 42 val))
+      (is (eq t found)))
+    
+    (multiple-value-bind (val found) (cache-get "list-key" cache)
+      (is (equal '(1 2 3) val))
+      (is (eq t found)))))
+
+;;; Run tests
+(unless (run-all-tests)
+  (sb-ext:quit :unix-status 1))
