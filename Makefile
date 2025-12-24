@@ -19,7 +19,7 @@ install-roswell:
 
 install-dependencies:
 	ros install fiveam
-	ros install macnod/dc-dlist
+	ros install macnod/dc-dlist/v1.0
 
 test:
 	ros run -- --disable-debugger --load "$(TEST_FILE)" --quit
