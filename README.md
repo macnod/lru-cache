@@ -10,7 +10,7 @@ A Common Lisp implementation of an LRU (Least Recently Used) cache using a hash 
 
 - **Fast lookups**: O(1) time complexity for both `cache-get` and `cache-put` operations
 - **Automatic eviction**: Automatically evicts least recently used items when cache reaches maximum size
-- **Simple API**: Easy-to-use interface with `cach-put` and `cache-get` methods
+- **Simple API**: Easy-to-use interface with `cache-put` and `cache-get` methods
 - **Flexible**: Store any type of values with any type of keys
 
 ## Installation
