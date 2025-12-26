@@ -66,9 +66,9 @@ ros install macnod/lru-cache/v1.1
 
 Creates a new LRU cache with `SIZE` and `TEST`.
 
-- `SIZE`: the maximum size of the cache. If the cache reaches `SIZE`, then a new entry causes the least-recently-used entry to be evicted, such that cache never exceeds `SIZE`. The default is 100.
-
-- `TEST`: The test function to use for the cache's internal hash table. One of `eq`, `eql`, `equal`, or `equalp`. The default is `equal`.
+Init forms:
+- `MAX-SIZE`: the maximum size of the cache. If the cache reaches `SIZE`, then a new entry causes the least-recently-used entry to be evicted, such that cache never exceeds `SIZE`. The default is 100.
+- `TEST-FUNCTION`: The test function to use for the cache's internal hash table. One of `eq`, `eql`, `equal`, or `equalp`. The default is `equal`.
 
 #### `cache-put key value cache`
 
