@@ -6,6 +6,12 @@ LRU Cache library for Common Lisp
 
 A Common Lisp implementation of an LRU (Least Recently Used) cache using a hash table for O(1) lookups and a doubly-linked list (via [dc-dlist](https://github.com/macnod/dc-dlist)) to maintain LRU order.
 
+**Note**: This code is changing quickly, so if you decide to use it, please pin your use to a release. Here's a Roswell example:
+
+```sh
+ros install macnod/lru-cache/v1.1
+```
+
 ## Features
 
 - **Fast lookups**: O(1) time complexity for both `cache-get` and `cache-put` operations
