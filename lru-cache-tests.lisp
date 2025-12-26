@@ -198,6 +198,54 @@
       (is (equal '(1 2 3) val))
       (is (eq t found)))))
 
+(test test-function
+  "Test using a different test function"
+  (let ((cache (make-instance 'lru-cache :max-size 3 :test-function #'eql)))
+
+    ;; Fill the cache
+    (cache-put :key-1 "value-1" cache)
+    (cache-put :key-2 "value-2" cache)
+    (cache-put :key-3 "value-3" cache)
+    (cache-put :key-4 "value-4" cache)
+    (cache-put :key-4 "value-4a" cache)
+    (cache-put :key-4 "value-4b" cache)
+
+    ;; Ensure that :key-1 was evicted
+    (multiple-value-bind (val found) (cache-get :key-1 cache)
+      (declare (ignore val))
+      (is-false found ":key-1 should have been evicted"))
+
+    ;; The rest of the keys should be there
+    (loop for key in (list :key-2 :key-3 :key-4)
+      for val in (list "value-2" "value-3" "value-4b")
+      always (multiple-value-bind (v found) (cache-get key cache)
+               (is-true found)
+               (is (equal v val)))))
+
+  (let ((cache (make-instance 'lru-cache :max-size 3 :test-function #'eql)))
+    (cache-put :key- "updated-1" cache)
+
+    ;; Fill the cache
+    (cache-put "key-1" "value-1" cache)
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
+    (cache-put "key-4" "value-4" cache)
+    (cache-put "key-4" "value-4a" cache)
+    (cache-put "key-4" "value-4b" cache)
+
+    ;; Keys 1-3 should have been evicted, because key-4 does not match itself
+    (loop for key in (list "key-1" "key-2" "key-3")
+      for value in (list "value-1" "value-2" "value-3")
+      always (multiple-value-bind (v found) (cache-get key cache)
+               (declare (ignore v))
+               (is-false found)))
+
+    ;; key-4 will never be found
+    (multiple-value-bind (v found) (cache-get "key-4" cache)
+      (is-false v)
+      (is-false found))))
+
+
 ;;; Run tests
 (unless (run-all-tests)
   (sb-ext:quit :unix-status 1))

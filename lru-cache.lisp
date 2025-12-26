@@ -9,19 +9,32 @@
 ;;; and value and.
 (defclass lru-cache ()
   ((cache-table
-    :initform (make-hash-table :test 'equal)
     :accessor cache-table
     :documentation "Hash table mapping keys to dlist nodes")
-   (cache-list
-    :initform (make-instance 'dl:dlist)
-    :accessor cache-list
-    :documentation "Doubly-linked list maintaining LRU order")
-   (max-size
-    :initarg :max-size
-    :initform 100
-    :accessor cache-max-size
-    :documentation "Maximum number of entries before eviction"))
-  (:documentation "LRU Cache with bounded size and automatic eviction"))
+    (cache-list
+      :initform (make-instance 'dl:dlist)
+      :reader cache-list
+      :documentation "Doubly-linked list maintaining LRU order")
+    (max-size
+      :initarg :max-size
+      :initform 100
+      :reader cache-max-size
+      :documentation
+      "Maximum number of entries before eviction. Defaults to 100.")
+    (test-function
+      :initarg :test-function
+      :initform #'equal
+      :reader test-function
+      :documentation
+      "Test function for the cache-table hash table. Defaults to EQUAL."))
+  (:documentation "LRU Cache with bounded size and automatic eviction."))
+
+(defmethod initialize-instance :after ((cache lru-cache) &key)
+  "Initialize the cache-table hash table with the specified test function and size."
+  (setf
+    (cache-table cache) (make-hash-table
+                          :test (test-function cache)
+                          :size (1+ (cache-max-size cache)))))
 
 (defun cache-size (cache)
   "Return the current number of entries in the cache."
