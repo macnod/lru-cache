@@ -59,14 +59,14 @@
   "Test updating an existing key"
   (let ((cache (make-instance 'lru-cache :max-size 3)))
     (cache-put "key-1" "value-1" cache)
-    (cache-put "key-1" "updated-value" cache)
+    (cache-put "key-1" "updated-1" cache)
     
     ;; Size should still be 1
     (is (= 1 (cache-size cache)))
     
     ;; Value should be updated
     (multiple-value-bind (val found) (cache-get "key-1" cache)
-      (is (equal "updated-value" val))
+      (is (equal "updated-1" val))
       (is (eq t found)))))
 
 (test eviction
@@ -162,7 +162,7 @@
     (cache-put "key-3" "value-3" cache)
     
     ;; Update key-1 to make it most recent
-    (cache-put "key-1" "updated1" cache)
+    (cache-put "key-1" "updated-1" cache)
     
     ;; Add a 4th item, should evict key-2 (now least recent)
     (cache-put "key-4" "value-4" cache)
@@ -174,7 +174,7 @@
     
     ;; key-1 should still exist with updated value
     (multiple-value-bind (val found) (cache-get "key-1" cache)
-      (is (equal "updated1" val))
+      (is (equal "updated-1" val))
       (is (eq t found)))))
 
 (test different-value-types
@@ -223,7 +223,6 @@
                (is (equal v val)))))
 
   (let ((cache (make-instance 'lru-cache :max-size 3 :test-function #'eql)))
-    (cache-put :key- "updated-1" cache)
 
     ;; Fill the cache
     (cache-put "key-1" "value-1" cache)
