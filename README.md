@@ -29,7 +29,7 @@ This library depends on [dc-dlist](https://github.com/macnod/dc-dlist). Make sur
 
 Using Roswell:
 ```sh
-ros install macnod/lru-cache/v1.0
+ros install macnod/lru-cache/v1.1
 ```
 
 ## Usage
