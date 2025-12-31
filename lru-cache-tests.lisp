@@ -244,6 +244,102 @@
       (is-false v)
       (is-false found))))
 
+(test cache-size
+  "Test functions for monitoring the size of the cache"
+  (let ((cache (make-instance 'lru-cache :max-size 4)))
+    (is (= 4 (cache-max-size cache)))
+    (cache-put "key-1" "value-1" cache)
+    (is (= 1 (cache-size cache)))
+    (is (= 0.25 (cache-usage cache)))
+    (cache-put "key-2" "value-2" cache)
+    (is (= 2 (cache-size cache)))
+    (is (= 0.50 (cache-usage cache)))
+    (cache-put "key-3" "value-3" cache)
+    (is (= 3 (cache-size cache)))
+    (is (= 0.75 (cache-usage cache)))
+    (cache-put "key-4" "value-4" cache)
+    (is (= 4.00 (cache-size cache)))
+    (is (= 1.00 (cache-usage cache)))
+    (cache-put "key-5" "value-5" cache)
+    (is (= 4 (cache-size cache)))
+    (is (= 1.00 (cache-usage cache)))
+    (is (= 4 (cache-max-size cache)))))
+
+(test remove
+  "test removing items from the cache"
+  (let* ((size 10)
+          (current-size 0)
+          (cache (make-instance 'lru-cache :max-size size))
+          (first-key nil)
+          (middle-key nil)
+          (last-key nil))
+    (loop for a from 1 to (1- size)
+      for key = (format nil "key-~a" a)
+      for key-first = key then key-first
+      for key-middle = (if (= a (floor size 2)) key key-middle)
+      for key-last = key
+      do
+      (cache-put (format nil "key-~a" a) (format nil "value-~a" a) cache)
+      (incf current-size)
+      finally
+      (setf
+        first-key key-first
+        middle-key key-middle
+        last-key key-last))
+    (is (= size (cache-max-size cache)))
+    (is (= current-size (cache-size cache)))
+    ;; Remove a key from the middle
+    (cache-remove middle-key cache)
+    (decf current-size)
+    (is (= current-size (cache-size cache)))
+    (multiple-value-bind (val found) (cache-get middle-key cache)
+      (is-false val)
+      (is-false found))
+    ;; Remove first key
+    (cache-remove first-key cache)
+    (decf current-size)
+    (is (= current-size (cache-size cache)))
+    (multiple-value-bind (val found) (cache-get first-key cache)
+      (is-false val)
+      (is-false found))
+    ;; Remove last key
+    (cache-remove last-key cache)
+    (decf current-size)
+    (is (= current-size (cache-size cache)))
+    (multiple-value-bind (val found) (cache-get last-key cache)
+      (is-false val)
+      (is-false found))
+    ;; Ensure other keys are still present
+    (loop for a from 1 to (1- size)
+      for key = (format nil "key-~a" a)
+      unless (member key (list first-key middle-key last-key) :test #'equal)
+      do (multiple-value-bind (val found) (cache-get key cache)
+           (is-true found)
+           (is (equal val (format nil "value-~a" a)))))
+    ;; Reinsert the middle key
+    (cache-put middle-key "value-middle" cache)
+    (incf current-size)
+    (is (= current-size (cache-size cache)))
+    (multiple-value-bind (val found) (cache-get middle-key cache)
+      (is-true found)
+      (is (equal val "value-middle")))
+    ;; Fill beyond capacity
+    (loop for a from current-size to (+ size 3)
+      for b = (+ size a)
+      for key = (format nil "key-~a" b)
+      for value = (format nil "value-~a" b)
+      do
+      (cache-put key value cache)
+      when (< current-size size) do (incf current-size))
+    (is (= current-size (cache-size cache)))
+    (is (= (cache-max-size cache) (cache-size cache)))
+    ;; Remove the middle-key again
+    (cache-remove middle-key cache)
+    (decf current-size)
+    (is (= current-size (cache-size cache)))
+    (multiple-value-bind (val found) (cache-get middle-key cache)
+      (is-false val)
+      (is-false found))))
 
 ;;; Run tests
 (unless (run-all-tests)

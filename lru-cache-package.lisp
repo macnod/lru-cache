@@ -5,9 +5,11 @@
   (:local-nicknames
     (:dl :dc-dlist))
   (:export
-    :lru-cache
-    :cache-put
     :cache-get
-    :cache-size
     :cache-max-size
+    :cache-put
+    :cache-remove
+    :cache-size
+    :cache-usage
+    :lru-cache
     ))
