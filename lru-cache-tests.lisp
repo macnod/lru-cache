@@ -345,6 +345,57 @@
     ;; Check return value of removing a nonexistent key
     (is-false (cache-remove "nonexisting-key" cache))))
 
+(test cache-op-counts
+  "Test that cache operation counts are tracked correctly"
+  (let ((cache (make-instance 'lru-cache :max-size 3)))
+    (is-true (zerop (cache-hits cache)))
+    (is-true (zerop (cache-misses cache)))
+    (is-true (zerop (cache-requests cache)))
+    (is-true (zerop (cache-insertions cache)))
+    (is-true (zerop (cache-updates cache)))
+    (is-true (zerop (cache-evictions cache)))
+    (is-true (zerop (cache-removals cache)))
+    ;; Insert a new item
+    (cache-put "key-1" "value-1" cache)
+    (is-true (zerop (cache-hits cache)))
+    (is-true (zerop (cache-misses cache)))
+    (is-true (zerop (cache-requests cache)))
+    (is (= 1 (cache-insertions cache)))
+    (is-true (zerop (cache-updates cache)))
+    (is-true (zerop (cache-evictions cache)))
+    (is-true (zerop (cache-removals cache)))
+    ;; Update existing item
+    (cache-put "key-1" "value-1-updated" cache)
+    (is-true (zerop (cache-hits cache)))
+    (is-true (zerop (cache-misses cache)))
+    (is-true (zerop (cache-requests cache)))
+    (is (= 1 (cache-insertions cache)))
+    (is (= 1 (cache-updates cache)))
+    (is-true (zerop (cache-evictions cache)))
+    (is-true (zerop (cache-removals cache)))
+    ;; Get existing item
+    (cache-get "key-1" cache)
+    (is (= 1 (cache-hits cache)))
+    (is (= 1 (cache-requests cache)))
+    ;; Get nonexistent item
+    (cache-get "key-2" cache)
+    (is (= 1 (cache-hits cache)))
+    (is (= 1 (cache-misses cache)))
+    (is (= 2 (cache-requests cache)))
+    ;; Fill cache to trigger eviction
+    (cache-put "key-2" "value-2" cache)
+    (cache-put "key-3" "value-3" cache)
+    (is (= 3 (cache-insertions cache)))
+    (cache-put "key-4" "value-4" cache)
+    (is (= 4 (cache-insertions cache)))
+    (is (= 1 (cache-evictions cache)))
+    ;; Remove an item
+    (cache-remove "key-4" cache)
+    (is (= 1 (cache-removals cache)))
+    ;; Remove nonexistent item
+    (cache-remove "nonexistent" cache)
+    (is (= 1 (cache-removals cache)))))
+
 ;;; Run tests
 (unless (run-all-tests)
   (sb-ext:quit :unix-status 1))

@@ -18,9 +18,45 @@
     (cache-max-size
       :initarg :max-size
       :initform 100
+      :type integer
       :reader cache-max-size
       :documentation
       "Maximum number of entries before eviction. Defaults to 100.")
+    (cache-hits
+      :accessor cache-hits
+      :initform 0
+      :type integer
+      :documentation "Number of cache hits.")
+    (cache-misses
+      :accessor cache-misses
+      :initform 0
+      :type integer
+      :documentation "Number of cache misses.")
+    (cache-requests
+      :accessor cache-requests
+      :initform 0
+      :type integer
+      :documentation "Total number of cache gets.")
+    (cache-insertions
+      :accessor cache-insertions
+      :initform 0
+      :type integer
+      :documentation "Total number of cache insertions.")
+    (cache-updates
+      :accessor cache-updates
+      :initform 0
+      :type integer
+      :documentation "Total number of cache updates.")
+    (cache-evictions
+      :accessor cache-evictions
+      :initform 0
+      :type integer
+      :documentation "Total number of evictions performed.")
+    (cache-removals
+      :accessor cache-removals
+      :initform 0
+      :type integer
+      :documentation "Total number of removals performed.")
     (test-function
       :initarg :test-function
       :initform #'equal
@@ -58,14 +94,17 @@ max-size, evict the least recently used entry."
         (progn
           (dl:delete-node cache-list node)
           (dl:push-head cache-list (list :key key :value value))
-          (setf (gethash key cache-table) (dl:head cache-list)))
+          (setf (gethash key cache-table) (dl:head cache-list))
+          (incf (cache-updates cache)))
         (progn
           (when (>= (dl:len cache-list) (cache-max-size cache))
             (let* ((evicted-payload (dl:pop-tail cache-list))
                     (evicted-key (getf evicted-payload :key)))
-              (remhash evicted-key cache-table)))
+              (remhash evicted-key cache-table)
+              (incf (cache-evictions cache))))
           (dl:push-head cache-list (list :key key :value value))
-          (setf (gethash key cache-table) (dl:head cache-list))))))
+          (setf (gethash key cache-table) (dl:head cache-list))
+          (incf (cache-insertions cache))))))
   value)
 
 (defmethod cache-get (key (cache lru-cache))
@@ -74,6 +113,7 @@ NIL if not found) and T/NIL indicating whether the key was found.  When found,
 moves the entry to the front (most recent)."
   (let ((cache-table (cache-table cache))
          (cache-list (cache-list cache)))
+    (incf (cache-requests cache))
     (multiple-value-bind (node found)
       (gethash key cache-table)
       (if found
@@ -83,8 +123,11 @@ moves the entry to the front (most recent)."
           (dl:delete-node cache-list node)
           (dl:push-head cache-list (list :key key :value value))
           (setf (gethash key cache-table) (dl:head cache-list))
+          (incf (cache-hits cache))
           (values value t))
-        (values nil nil)))))
+        (progn
+          (incf (cache-misses cache))
+          (values nil nil))))))
 
 (defmethod cache-remove (key (cache lru-cache))
   "Remove a key-value pair from the cache by key. Returns T if the key was found
@@ -96,4 +139,5 @@ and removed, NIL otherwise."
       (when found
         (dl:delete-node cache-list node)
         (remhash key cache-table)
+        (incf (cache-removals cache))
         t))))
