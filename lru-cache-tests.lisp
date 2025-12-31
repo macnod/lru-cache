@@ -333,13 +333,15 @@
       when (< current-size size) do (incf current-size))
     (is (= current-size (cache-size cache)))
     (is (= (cache-max-size cache) (cache-size cache)))
-    ;; Remove the middle-key again
-    (cache-remove middle-key cache)
+    ;; Check return value of remove the middle-key again
+    (is-true (cache-remove middle-key cache))
     (decf current-size)
     (is (= current-size (cache-size cache)))
     (multiple-value-bind (val found) (cache-get middle-key cache)
       (is-false val)
-      (is-false found))))
+      (is-false found))
+    ;; Check return value of removing a nonexistent key
+    (is-false (cache-remove "nonexisting-key" cache))))
 
 ;;; Run tests
 (unless (run-all-tests)
