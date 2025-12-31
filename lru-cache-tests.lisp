@@ -248,6 +248,8 @@
   "Test functions for monitoring the size of the cache"
   (let ((cache (make-instance 'lru-cache :max-size 4)))
     (is (= 4 (cache-max-size cache)))
+    (is (= 0 (cache-size cache)))
+    (is (= 0.0 (cache-usage cache)))
     (cache-put "key-1" "value-1" cache)
     (is (= 1 (cache-size cache)))
     (is (= 0.25 (cache-usage cache)))
@@ -265,8 +267,8 @@
     (is (= 1.00 (cache-usage cache)))
     (is (= 4 (cache-max-size cache)))))
 
-(test remove
-  "test removing items from the cache"
+(test cache-remove
+  "Test removing items from the cache"
   (let* ((size 10)
           (current-size 0)
           (cache (make-instance 'lru-cache :max-size size))

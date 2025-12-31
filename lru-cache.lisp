@@ -42,7 +42,9 @@
 
 (defmethod cache-usage ((cache lru-cache))
   "Return the usage ratio of the cache (current size / max size)."
-  (/ (float (cache-size cache)) (cache-max-size cache)))
+  (if (zerop (cache-max-size cache))
+    0.0
+    (/ (float (cache-size cache)) (cache-max-size cache))))
 
 (defmethod cache-put (key value (cache lru-cache))
   "Insert or update a key-value pair in the cache. If the key exists, update its
@@ -85,7 +87,8 @@ moves the entry to the front (most recent)."
         (values nil nil)))))
 
 (defmethod cache-remove (key (cache lru-cache))
-  "Remove a key-value pair from the cache by key."
+  "Remove a key-value pair from the cache by key. Returns T if the key was found
+and removed, NIL otherwise."
   (let ((cache-table (cache-table cache))
          (cache-list (cache-list cache)))
     (multiple-value-bind (node found)
