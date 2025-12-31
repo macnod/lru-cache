@@ -385,11 +385,15 @@
     ;; Fill cache to trigger eviction
     (cache-put "key-2" "value-2" cache)
     (cache-put "key-3" "value-3" cache)
+    (is (= 3 (cache-insertions cache)))
     (cache-put "key-4" "value-4" cache)
     (is (= 4 (cache-insertions cache)))
     (is (= 1 (cache-evictions cache)))
     ;; Remove an item
     (cache-remove "key-4" cache)
+    (is (= 1 (cache-removals cache)))
+    ;; Remove nonexistent item
+    (cache-remove "nonexistent" cache)
     (is (= 1 (cache-removals cache)))))
 
 ;;; Run tests

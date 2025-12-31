@@ -18,36 +18,44 @@
     (cache-max-size
       :initarg :max-size
       :initform 100
+      :type integer
       :reader cache-max-size
       :documentation
       "Maximum number of entries before eviction. Defaults to 100.")
     (cache-hits
       :accessor cache-hits
       :initform 0
+      :type integer
       :documentation "Number of cache hits.")
     (cache-misses
       :accessor cache-misses
       :initform 0
+      :type integer
       :documentation "Number of cache misses.")
     (cache-requests
       :accessor cache-requests
       :initform 0
+      :type integer
       :documentation "Total number of cache gets.")
     (cache-insertions
       :accessor cache-insertions
       :initform 0
+      :type integer
       :documentation "Total number of cache insertions.")
     (cache-updates
       :accessor cache-updates
       :initform 0
+      :type integer
       :documentation "Total number of cache updates.")
     (cache-evictions
       :accessor cache-evictions
       :initform 0
+      :type integer
       :documentation "Total number of evictions performed.")
     (cache-removals
       :accessor cache-removals
       :initform 0
+      :type integer
       :documentation "Total number of removals performed.")
     (test-function
       :initarg :test-function
